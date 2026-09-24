@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import { basename, join, relative } from 'path';
 
 const EXCLUDED_TOP_LEVEL_ENTRIES = new Set([
@@ -67,9 +67,12 @@ export function findScaffoldSource(packageRoot: string): ScaffoldSource {
 
   const repoRoot = join(packageRoot, '..', '..');
   if (existsSync(join(repoRoot, 'prompts.config.ts'))) {
+    rmSync(templateDir, { force: true, recursive: true });
+    copyScaffoldFiles(repoRoot, templateDir);
+
     return {
       bundled: false,
-      sourceDir: repoRoot,
+      sourceDir: templateDir,
     };
   }
 
