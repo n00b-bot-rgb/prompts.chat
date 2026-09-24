@@ -8,6 +8,8 @@ interface NewOptions {
   directory: string;
 }
 
+export const INSTALL_DEPENDENCIES_COMMAND = 'npm install --include=dev';
+
 function runSetup(baseDir: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const setupScript = join(baseDir, 'scripts', 'setup.js');
@@ -73,7 +75,7 @@ export async function createNew(options: NewOptions): Promise<void> {
   // Install dependencies
   console.log('\n📥 Installing dependencies...\n');
   try {
-    execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
+    execSync(INSTALL_DEPENDENCIES_COMMAND, { cwd: targetDir, stdio: 'inherit' });
   } catch {
     console.error('\n⚠ Failed to install dependencies. You can run "npm install" manually.');
   }
