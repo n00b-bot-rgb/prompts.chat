@@ -77,7 +77,9 @@ export async function createNew(options: NewOptions): Promise<void> {
   try {
     execSync(INSTALL_DEPENDENCIES_COMMAND, { cwd: targetDir, stdio: 'inherit' });
   } catch {
-    console.error('\n⚠ Failed to install dependencies. You can run "npm install" manually.');
+    console.error(
+      `\n⚠ Failed to install dependencies. You can run "${INSTALL_DEPENDENCIES_COMMAND}" manually.`
+    );
   }
 
   // Run the setup script
