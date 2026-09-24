@@ -1,41 +1,11 @@
 import { spawn, execSync } from 'child_process';
-import { existsSync, rmSync, readdirSync } from 'fs';
-import { join, resolve } from 'path';
-
-const REPO = 'f/prompts.chat';
+import { existsSync, readdirSync } from 'fs';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { copyScaffoldFiles, findScaffoldSource } from './scaffold.js';
 
 interface NewOptions {
   directory: string;
-}
-
-function removeFiles(baseDir: string): void {
-  const toRemove = [
-    '.github',
-    '.claude',
-    'packages',
-  ];
-
-  // Remove directories
-  for (const item of toRemove) {
-    const itemPath = join(baseDir, item);
-    if (existsSync(itemPath)) {
-      console.log(`  Removing ${item}/`);
-      rmSync(itemPath, { recursive: true, force: true });
-    }
-  }
-
-  // Remove scripts/generate* and scripts/rebuild* files
-  const scriptsDir = join(baseDir, 'scripts');
-  if (existsSync(scriptsDir)) {
-    const files = readdirSync(scriptsDir);
-    for (const file of files) {
-      if (file.startsWith('generate') || file.startsWith('rebuild')) {
-        const filePath = join(scriptsDir, file);
-        console.log(`  Removing scripts/${file}`);
-        rmSync(filePath, { force: true });
-      }
-    }
-  }
 }
 
 function runSetup(baseDir: string): Promise<void> {
@@ -71,6 +41,7 @@ function runSetup(baseDir: string): Promise<void> {
 
 export async function createNew(options: NewOptions): Promise<void> {
   const targetDir = resolve(process.cwd(), options.directory);
+  const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
   if (existsSync(targetDir)) {
     const files = readdirSync(targetDir);
@@ -82,24 +53,28 @@ export async function createNew(options: NewOptions): Promise<void> {
 
   console.log('\n📦 Creating new prompts.chat instance...\n');
 
-  // Use degit to clone the repo
+  let scaffoldSource;
   try {
-    console.log(`  Cloning ${REPO}...`);
-    execSync(`npx degit ${REPO} "${targetDir}"`, { stdio: 'inherit' });
+    scaffoldSource = findScaffoldSource(packageRoot);
+    console.log(
+      scaffoldSource.bundled
+        ? '  Unpacking bundled scaffold...'
+        : '  Copying local scaffold...'
+    );
+    copyScaffoldFiles(scaffoldSource.sourceDir, targetDir);
   } catch (error) {
-    console.error('\n❌ Failed to clone repository. Make sure you have internet connection.');
+    console.error('\n❌ Failed to prepare the scaffold.');
+    console.error(`   ${(error as Error).message}`);
     process.exit(1);
+  } finally {
+    scaffoldSource?.cleanup?.();
   }
-
-  // Remove unnecessary files
-  console.log('\n🧹 Cleaning up files...\n');
-  removeFiles(targetDir);
 
   // Install dependencies
   console.log('\n📥 Installing dependencies...\n');
   try {
     execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
-  } catch (error) {
+  } catch {
     console.error('\n⚠ Failed to install dependencies. You can run "npm install" manually.');
   }
 
