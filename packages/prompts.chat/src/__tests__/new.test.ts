@@ -36,6 +36,7 @@ describe('createNew', () => {
 
     await createNew({ directory: 'my-prompts-chat' });
 
+    expect(execSyncMock).toHaveBeenCalledOnce();
     expect(execSyncMock).toHaveBeenCalledWith(INSTALL_DEPENDENCIES_COMMAND, {
       cwd: expect.stringMatching(/my-prompts-chat$/),
       stdio: 'inherit',
