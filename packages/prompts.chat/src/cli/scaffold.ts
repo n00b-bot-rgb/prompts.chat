@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { basename, join, relative } from 'path';
 
 const EXCLUDED_TOP_LEVEL_ENTRIES = new Set([
@@ -77,17 +77,22 @@ export function findScaffoldSource(packageRoot: string): ScaffoldSource {
 }
 
 export function copyScaffoldFiles(sourceDir: string, targetDir: string): void {
+  const entries = readdirSync(sourceDir);
+
   mkdirSync(targetDir, { recursive: true });
 
-  cpSync(sourceDir, targetDir, {
-    recursive: true,
-    filter: (sourcePath) => {
-      const relativePath = relative(sourceDir, sourcePath);
-      if (!relativePath) {
-        return true;
-      }
+  for (const entry of entries) {
+    if (!shouldIncludeScaffoldPath(entry)) {
+      continue;
+    }
 
-      return shouldIncludeScaffoldPath(relativePath);
-    },
-  });
+    const sourcePath = join(sourceDir, entry);
+    const targetPath = join(targetDir, entry);
+
+    cpSync(sourcePath, targetPath, {
+      recursive: true,
+      filter: (nestedSourcePath) =>
+        shouldIncludeScaffoldPath(relative(sourceDir, nestedSourcePath)),
+    });
+  }
 }

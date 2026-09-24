@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, rmSync } from 'fs';
+import { cpSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -53,16 +53,20 @@ function shouldIncludeScaffoldPath(relativePath) {
 }
 
 rmSync(templateDir, { recursive: true, force: true });
+const entries = readdirSync(repoRoot);
 mkdirSync(templateDir, { recursive: true });
 
-cpSync(repoRoot, templateDir, {
-  recursive: true,
-  filter: (sourcePath) => {
-    const relativePath = path.relative(repoRoot, sourcePath);
-    if (!relativePath) {
-      return true;
-    }
+for (const entry of entries) {
+  if (!shouldIncludeScaffoldPath(entry)) {
+    continue;
+  }
 
-    return shouldIncludeScaffoldPath(relativePath);
-  },
-});
+  const sourcePath = path.join(repoRoot, entry);
+  const targetPath = path.join(templateDir, entry);
+
+  cpSync(sourcePath, targetPath, {
+    recursive: true,
+    filter: (nestedSourcePath) =>
+      shouldIncludeScaffoldPath(path.relative(repoRoot, nestedSourcePath)),
+  });
+}

@@ -71,7 +71,7 @@ export async function createNew(options: NewOptions): Promise<void> {
   console.log('\n📥 Installing dependencies...\n');
   try {
     execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
-  } catch (error) {
+  } catch {
     console.error('\n⚠ Failed to install dependencies. You can run "npm install" manually.');
   }
 
