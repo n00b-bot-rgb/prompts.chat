@@ -1,60 +1,15 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
-import { basename, join, relative } from 'path';
-
-const EXCLUDED_TOP_LEVEL_ENTRIES = new Set([
-  '.claude',
-  '.git',
-  '.github',
-  '.next',
-  '.turbo',
-  '.vercel',
-  'build',
-  'coverage',
-  'dist',
-  'node_modules',
-  'packages',
-]);
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'fs';
+import { join, relative } from 'path';
+import { tmpdir } from 'os';
+import { shouldIncludeScaffoldPath } from '../../scaffold-rules.mjs';
 
 export interface ScaffoldSource {
   bundled: boolean;
+  cleanup?: () => void;
   sourceDir: string;
 }
 
-function toPosixPath(filePath: string): string {
-  return filePath.split('\\').join('/');
-}
-
-export function shouldIncludeScaffoldPath(relativePath: string): boolean {
-  const normalizedPath = toPosixPath(relativePath);
-  const segments = normalizedPath.split('/').filter(Boolean);
-
-  if (segments.length === 0) {
-    return true;
-  }
-
-  if (EXCLUDED_TOP_LEVEL_ENTRIES.has(segments[0]!)) {
-    return false;
-  }
-
-  const name = basename(normalizedPath);
-
-  if (name === '.DS_Store' || name.endsWith('.log')) {
-    return false;
-  }
-
-  if (name.startsWith('.env') && name !== '.env.example') {
-    return false;
-  }
-
-  if (
-    segments[0] === 'scripts' &&
-    (name.startsWith('generate') || name.startsWith('rebuild'))
-  ) {
-    return false;
-  }
-
-  return true;
-}
+export { shouldIncludeScaffoldPath } from '../../scaffold-rules.mjs';
 
 export function findScaffoldSource(packageRoot: string): ScaffoldSource {
   const templateDir = join(packageRoot, 'template');
@@ -67,12 +22,13 @@ export function findScaffoldSource(packageRoot: string): ScaffoldSource {
 
   const repoRoot = join(packageRoot, '..', '..');
   if (existsSync(join(repoRoot, 'prompts.config.ts'))) {
-    rmSync(templateDir, { force: true, recursive: true });
-    copyScaffoldFiles(repoRoot, templateDir);
+    const fallbackDir = mkdtempSync(join(tmpdir(), 'prompts-chat-scaffold-'));
+    copyScaffoldFiles(repoRoot, fallbackDir);
 
     return {
       bundled: false,
-      sourceDir: templateDir,
+      cleanup: () => rmSync(fallbackDir, { force: true, recursive: true }),
+      sourceDir: fallbackDir,
     };
   }
 

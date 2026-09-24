@@ -87,7 +87,6 @@ describe('scaffold helpers', () => {
   it('falls back to the local repository when the template is missing', () => {
     const repoRoot = createTempDir();
     const packageRoot = join(repoRoot, 'packages', 'prompts.chat');
-    const templateDir = join(packageRoot, 'template');
 
     mkdirSync(join(packageRoot, 'scripts'), { recursive: true });
     mkdirSync(join(repoRoot, 'scripts'), { recursive: true });
@@ -96,12 +95,14 @@ describe('scaffold helpers', () => {
     writeFileSync(join(repoRoot, 'package.json'), '{}');
     writeFileSync(join(repoRoot, 'scripts', 'setup.js'), 'console.log("setup");');
 
-    expect(findScaffoldSource(packageRoot)).toEqual({
-      bundled: false,
-      sourceDir: templateDir,
-    });
-    expect(existsSync(join(templateDir, 'package.json'))).toBe(true);
-    expect(existsSync(join(templateDir, 'scripts', 'setup.js'))).toBe(true);
-    expect(existsSync(join(templateDir, 'README.md'))).toBe(false);
+    const scaffoldSource = findScaffoldSource(packageRoot);
+
+    expect(scaffoldSource.bundled).toBe(false);
+    expect(scaffoldSource.sourceDir).not.toBe(repoRoot);
+    expect(existsSync(join(scaffoldSource.sourceDir, 'package.json'))).toBe(true);
+    expect(existsSync(join(scaffoldSource.sourceDir, 'scripts', 'setup.js'))).toBe(true);
+    expect(existsSync(join(scaffoldSource.sourceDir, 'README.md'))).toBe(false);
+    scaffoldSource.cleanup?.();
+    expect(existsSync(scaffoldSource.sourceDir)).toBe(false);
   });
 });

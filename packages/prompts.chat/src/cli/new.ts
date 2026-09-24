@@ -53,8 +53,9 @@ export async function createNew(options: NewOptions): Promise<void> {
 
   console.log('\n📦 Creating new prompts.chat instance...\n');
 
+  let scaffoldSource;
   try {
-    const scaffoldSource = findScaffoldSource(packageRoot);
+    scaffoldSource = findScaffoldSource(packageRoot);
     console.log(
       scaffoldSource.bundled
         ? '  Unpacking bundled scaffold...'
@@ -65,6 +66,8 @@ export async function createNew(options: NewOptions): Promise<void> {
     console.error('\n❌ Failed to prepare the scaffold.');
     console.error(`   ${(error as Error).message}`);
     process.exit(1);
+  } finally {
+    scaffoldSource?.cleanup?.();
   }
 
   // Install dependencies
