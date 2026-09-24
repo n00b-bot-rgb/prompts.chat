@@ -45,6 +45,7 @@
   "files": [
     "bin",
     "dist",
+    "template",
     "README.md"
   ],
   "keywords": [
@@ -73,6 +74,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "prepare:template": "node scripts/prepare-template.mjs",
+    "prepack": "npm run prepare:template",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
