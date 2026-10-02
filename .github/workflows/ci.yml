@@ -33,3 +33,7 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Test CLI scaffold failure handling
+        run: npx vitest run --root packages/prompts.chat --config vitest.config.ts src/__tests__/new.test.ts
+

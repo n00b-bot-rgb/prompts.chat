@@ -49,13 +49,15 @@ export async function createNew(options: NewOptions): Promise<void> {
     const files = readdirSync(targetDir);
     if (files.length > 0) {
       console.error(`\n❌ Directory "${options.directory}" already exists and is not empty.`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   }
 
   console.log('\n📦 Creating new prompts.chat instance...\n');
 
   let scaffoldSource;
+  let scaffoldFailed = false;
   try {
     scaffoldSource = findScaffoldSource(packageRoot);
     console.log(
@@ -64,12 +66,19 @@ export async function createNew(options: NewOptions): Promise<void> {
         : '  Copying local scaffold...'
     );
     copyScaffoldFiles(scaffoldSource.sourceDir, targetDir);
-  } catch (error) {
-    console.error('\n❌ Failed to prepare the scaffold.');
-    console.error(`   ${(error as Error).message}`);
-    process.exit(1);
+  } catch {
+    scaffoldFailed = true;
   } finally {
-    scaffoldSource?.cleanup?.();
+    try {
+      scaffoldSource?.cleanup?.();
+    } catch {
+      scaffoldFailed = true;
+    }
+  }
+  if (scaffoldFailed) {
+    console.error('\n❌ Failed to prepare the scaffold.');
+    process.exitCode = 1;
+    return;
   }
 
   // Install dependencies
@@ -80,13 +89,17 @@ export async function createNew(options: NewOptions): Promise<void> {
     console.error(
       `\n⚠ Failed to install dependencies. You can run "${INSTALL_DEPENDENCIES_COMMAND}" manually.`
     );
+    process.exitCode = 1;
+    return;
   }
 
   // Run the setup script
   try {
     await runSetup(targetDir);
-  } catch (error) {
-    console.error('\n⚠ Setup failed:', (error as Error).message);
+  } catch {
+    console.error('\n⚠ Setup failed:');
+    process.exitCode = 1;
+    return;
   }
 
   console.log('\n✅ Done! Your prompts.chat instance is ready.\n');
