@@ -33,7 +33,7 @@ npx prompts.chat new my-prompt-library
 ```
 
 This will:
-1. Clone a clean copy of the repository (removes `.github`, `.claude`, `packages/`, dev scripts)
+1. Unpack the bundled scaffold and copy the app files into your new directory
 2. Install dependencies
 3. Launch the interactive setup wizard to configure branding, theme, auth, and features
 
